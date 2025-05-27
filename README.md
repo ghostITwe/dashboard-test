@@ -44,6 +44,23 @@ SVG - это векторная графика и в HTML5 есть опреде
 1. nav с кнопками, которые будут создавать на холсте фигуры
 2. svg - наш холст, данный тэг необходим для добавления элементов векторной графики
 
+В тэге template делаем рендер наших фигур, которые находятся в массиве shapes
+```vue
+<template v-for="shape in shapes" :key="shape.id">
+  
+</template>
+```
+Добавляем внутрь наши созданные шаблоны фигур, в каждой фигуре внутри делаем атрибут v-if="shape.type === 'rect'", для того, чтобы определить что за тип у нашей фигуры и отрендерить её, после чего через :, передаем в наши компоненты параметры shape, selected-id и on-mouse-down
+пример с прямоугольником
+```vue
+<ShapeRect
+    v-if="shape.type === 'rect'"
+    :shape="shape"
+    :selected-id="selectedId"
+    :on-mouse-down="onMouseDown"
+/>
+```
+
 В script создадим функцию createId, которая будет генерировать нам случайны ID для наших элементов
 ```js 
 function createId() {
@@ -86,6 +103,57 @@ function createShape(type) {
 3. type - тип нашей фигуры, которую мы создаём
 
 Внутри тэга svg добавляем наши фигуры, которые описаны внутри нашей папки shapes, через v-if, v-if-else
+
+Чтобы мы могли вращать наши фигуры c фокусом сделаем 3 функции, onMouseDown для того, чтобы мы могли активировать мышкой движение нашего элемента
+```js
+function onMouseDown(e, shape) {
+  selectedId.value = shape.id;
+  dragging.value = true;
+
+  dragOffset.value.x = e.offsetX - shape.x;
+  dragOffset.value.y = e.offsetY - shape.y;
+}
+```
+Переменные, которые мы передаем в функцию - это e (event наш) и наша фигура shape
+внутри функции мы в selectedId ставим текущий shape.id нашей фигуры, которую мы будем перемещать и ставим dragging.value = true, чтобы понять что элемент имеет возможность перетаскиваться
+
+Дальше мы изменяем в объекте dragOffset.value.x и y, e.offsetX и e.offsetY это текущей положение курсора нашей мыши
+
+Следующая функция onMouseMove(e), делает передвижение нашей мышки с элементом
+```js
+function onMouseMove(e) {
+  if (!dragging.value || !selectedId.value) return;
+
+  const shape = shapes.value.find(shape => shape.id === selectedId.value)
+  if (!shape) return;
+
+  const svg  = e.currentTarget.getBoundingClientRect();
+
+  let x = e.clientX - svg.left - dragOffset.value.x;
+  let y = e.clientY - svg.top - dragOffset.value.y;
+
+  shape.x = Math.max(0, Math.min(x, svg.width));
+  shape.y = Math.max(0, Math.min(y, svg.height));
+}
+```
+Здесь мы сначала проверяем, если нет значения у dragging и нет текущего выбранного id, то завершаем функцию
+
+Дальше получаем нашу фигуру по Id, через метод ***find***, который есть у массивов сравнивая текущий выбранный id и все наши фигуры
+Если нет фигуры, то завершаем функцию
+
+Следующее, что мы делаем - это получаем наш svg, можно сделать двумя способами
+1. через e.currentTarget.getBoundingClientRect()
+2. через document.querySelector(".canvas"), по классу для нашего svg
+
+После чего мы обновляем shape.x, shape.y у нашей выбранной фигуры
+
+Функция onMouseUp() делает очищение dragging и selectedId, когда отпускаем нажатие мышки
+```js
+function onMouseUp() {
+  dragging.value = false;
+  selectedId.value = '';
+}
+```
 
 
 
