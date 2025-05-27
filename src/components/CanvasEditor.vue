@@ -16,10 +16,11 @@ const shapes = ref([]),
     }),
     editingTextId = ref(null),
     editingTextValue = ref(''),
-    fileInput = ref('');
+    fileInput = ref(''),
+    id = ref(0);
 
 function createId() {
-  return 'id-' + Math.random().toString(36).substr(2, 9);
+  return "id-" + id.value++
 }
 
 function createShape(type) {

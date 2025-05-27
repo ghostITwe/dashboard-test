@@ -39,35 +39,47 @@ SVG - это векторная графика и в HTML5 есть опреде
 5. editingTextId - айди выбранного текста, который надо редактировать
 6. editingTextValue - реактивная переменная, которая следит за значением
 7. fileInput - файловое поле для добавления картинки на холст
+8. id - идентификатор, который будет накопителем при создании новых фигур
+
+```js
+const shapes = ref([]),
+    selectedId = ref(''),
+    dragging = ref(false),
+    dragOffset = ref({
+        x: 0,
+        y: 0
+    }),
+    editingTextId = ref(null),
+    editingTextValue = ref(''),
+    fileInput = ref(''),
+    id = ref(0);
+```
 
 Первым делом создадим в тэге template создадим тэг main, в котором будет всё что связанно с холстом:
 1. nav с кнопками, которые будут создавать на холсте фигуры
 2. svg - наш холст, данный тэг необходим для добавления элементов векторной графики
 
-В тэге template делаем рендер наших фигур, которые находятся в массиве shapes
-```vue
-<template v-for="shape in shapes" :key="shape.id">
-  
-</template>
-```
+
+В тэге template делаем холст svg для наших фигур, а также ещё один template в котором будут добавлены наши фигуры
+
 Добавляем внутрь наши созданные шаблоны фигур, в каждой фигуре внутри делаем атрибут v-if="shape.type === 'rect'", для того, чтобы определить что за тип у нашей фигуры и отрендерить её, после чего через :, передаем в наши компоненты параметры shape, selected-id и on-mouse-down
 пример с прямоугольником
 ```vue
-<ShapeRect
-    v-if="shape.type === 'rect'"
-    :shape="shape"
-    :selected-id="selectedId"
-    :on-mouse-down="onMouseDown"
-/>
+<template v-for="shape in shapes" :key="shape.id">
+  <ShapeRect
+      v-if="shape.type === 'rect'"
+      :shape="shape"
+      :selected-id="selectedId"
+      :on-mouse-down="onMouseDown"
+  />
+</template>
 ```
-
-В script создадим функцию createId, которая будет генерировать нам случайны ID для наших элементов
-```js 
+Создаим функцию, которая будет генерировать нам ID
+```js
 function createId() {
-  return 'id-' + Math.random().toString(36).substr(2, 9);
+  return "id-" + id.value++
 }
 ```
-
 Для создания фигуры напишем функцию createShape, которая принимает type - тип фигуры
 
 ```js
@@ -96,7 +108,7 @@ function createShape(type) {
 }
 ```
 
-в switch мы смотрим какой у нас тип нашей фигуры и добавляем в нашу реактивную переменную shapes объект нашей фигуры
+В switch мы смотрим какой у нас тип нашей фигуры и добавляем в нашу реактивную переменную shapes объект нашей фигуры
 В функции есть переменная baseData, которая изначально задаёт начальные параметры нашей фигуры, такие как:
 1. уникальный id нашего созданного блока
 2. начальный x и y, при создании нашей фигуры (Я тут сделал её чтобы в рандомном месте была, но можно добавить что угодно)
@@ -155,5 +167,62 @@ function onMouseUp() {
 }
 ```
 
+На тэг svg надо будеть накинуть наши функции
+```vue
+<svg
+  class="canvas" 
+  @mousemove="onMouseMove"
+  @mouseup="onMouseUp"
+  @mouseleave="onMouseUp"
+>
+  /// остальной наш код
+</svg>
+```
+### Работа с фигурой - текст
+Для изменения дабл кликом текста, нужно рядом с компонентом ShapeText создать foreignObject, данный элемент необходим в SVG для того, чтобы в вектор добавить HTML-элемент для изменения текста нам понадобиться input,
+
+В атрибуты :x, :y передаем такие же значения как у нашей фигуры - Текст и его размеры через width и height
+Далее внутрь foreignObject вставляем наш input, в который добавляем атрибуты:
+1. v-model для отслеживания изменения текста
+2. @blur - создание сокрытия нашего текста инпутом
+3. @keyup.enter - тригер при нажатии на кнопку enter сохранять новое значение текстовой фигуры
+4. style - для небольшой стилизации, но можно вынести и в тэг style в компоненете
+
+```vue
+<foreignObject
+    v-if="shape.type === 'text'" && editingTextId === shape.id
+    :x="shape.x"
+    :y="shape.y - 20"
+    width="150"
+    height="30"
+>
+  <input
+      v-model="editingTextValue"
+      @blur="endEditingText"
+      @keyup.enter="endEditingText"
+      type="text"
+      style="width: 100%; height: 100%; font-size: 16px;"
+  />
+</foreignObject>
+```
+
+Как мы видим в input есть некоторые функции и переменные для изменения текста, нам необходимо их создать, в самом начале скрипта CanvasEditor я добавил переменную editingTextValue, переменные можно назвать как угодно
+Код для открытия и изменения текста
+```js
+function startEditingText(shape) {
+  editingTextId.value = shape.id;
+  editingTextValue.value = shape.text;
+}
+
+function endEditingText() {
+  if (!editingTextId.value) return;
+
+  const shape = shapes.value.find(shape => shape.id === editingTextId.value);
+
+  if (!shape) return;
+  shape.text = editingTextValue.value;
+  editingTextId.value = '';
+}
+```
 
 
