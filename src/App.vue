@@ -1,9 +1,9 @@
 <script setup>
-import CanvasEditor from './components/CanvasEditor.vue';
+
 </script>
 
 <template>
-  <CanvasEditor/>
+    <router-view />
 </template>
 
 <style scoped>

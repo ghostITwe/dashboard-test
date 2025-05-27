@@ -5,6 +5,7 @@ import ShapeLine from './shapes/ShapeLine.vue'
 import ShapeText from './shapes/ShapeText.vue'
 
 import {ref} from 'vue'
+import ShapeImage from "@/components/shapes/ShapeImage.vue";
 
 const shapes = ref([]),
     selectedId = ref(''),
@@ -14,7 +15,8 @@ const shapes = ref([]),
       y: 0
     }),
     editingTextId = ref(null),
-    editingTextValue = ref('');
+    editingTextValue = ref(''),
+    fileInput = ref('');
 
 function createId() {
   return 'id-' + Math.random().toString(36).substr(2, 9);
@@ -82,6 +84,40 @@ function endEditingText() {
   editingTextId.value = '';
 }
 
+function triggerImageUpload() {
+  fileInput.value.click();
+}
+
+function onUploadImage(e) {
+  const file = e.target.files[0];
+  if (!file) return;
+
+  const reader = new FileReader();
+  reader.onload = () => {
+    const dataUrl = reader.result;
+    createImage(dataUrl);
+  }
+  reader.readAsDataURL(file);
+}
+
+function createImage(href) {
+  shapes.value.push({
+    id: createId(),
+    x: 50 + Math.random() * 200,
+    y: 50 + Math.random() * 200,
+    type: 'image',
+    width: 200,
+    height: 200,
+    href,
+  });
+
+  function sendShapesToServer() {
+    console.log(JSON.stringify(shapes.value));
+  }
+
+  sendShapesToServer();
+}
+
 </script>
 
 <template>
@@ -91,6 +127,8 @@ function endEditingText() {
       <button @click="createShape('circle')">Круг</button>
       <button @click="createShape('line')">Линия</button>
       <button @click="createShape('text')">Текст</button>
+      <button @click="triggerImageUpload()">Изображение</button>
+      <input type="file" ref="fileInput" @change="onUploadImage" accept="image/*" style="display: none">
     </nav>
 
     <section>
@@ -141,6 +179,12 @@ function endEditingText() {
                 style="width: 100%; height: 100%; font-size: 16px;"
             />
           </foreignObject>
+          <ShapeImage
+              v-else-if="shape.type === 'image'"
+              :shape="shape"
+              :selected-id="selectedId"
+              :on-mouse-down="onMouseDown"
+          />
         </template>
       </svg>
     </section>
