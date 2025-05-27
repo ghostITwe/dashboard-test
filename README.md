@@ -226,3 +226,44 @@ function endEditingText() {
 ```
 
 
+
+### Работа с ИЗображением
+```js
+function triggerImageUpload() {
+  fileInput.value.click();
+}
+
+function onUploadImage(e) {
+  const file = e.target.files[0];
+  if (!file) return;
+
+  const reader = new FileReader();
+  reader.onload = () => {
+    const dataUrl = reader.result;
+    createImage(dataUrl);
+  }
+  reader.readAsDataURL(file);
+}
+
+function createImage(href) {
+  shapes.value.push({
+    id: createId(),
+    x: 50 + Math.random() * 200,
+    y: 50 + Math.random() * 200,
+    type: 'image',
+    width: 200,
+    height: 200,
+    href,
+  });
+}
+```
+```html
+<button @click="triggerImageUpload()">Изображение</button>
+<input type="file" ref="fileInput" @change="onUploadImage" accept="image/*" style="display: none">
+```
+1. Функция triggerImageUpload(e) - работает для добавление триггера щелчка в переменную fileInput
+2. ref - нужен, чтобы ссылаться на переменную fileInput
+3. accept="image/*" - принимает любые изображения
+4. в onUploadImage - используем FileReader() для чтения файла и отображение его на странице
+
+
