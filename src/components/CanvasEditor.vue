@@ -60,8 +60,13 @@ function onMouseMove(e) {
   const shape = shapes.value.find(shape => shape.id === selectedId.value)
   if (!shape) return;
 
-  shape.x = e.offsetX - dragOffset.value.x;
-  shape.y = e.offsetY - dragOffset.value.y;
+  const svg  = e.currentTarget.getBoundingClientRect();
+
+  let x = e.clientX - svg.left - dragOffset.value.x;
+  let y = e.clientY - svg.top - dragOffset.value.y;
+
+  shape.x = Math.max(0, Math.min(x, svg.width));
+  shape.y = Math.max(0, Math.min(y, svg.height));
 }
 
 function onMouseUp() {
@@ -211,7 +216,10 @@ button {
   height: 100vh;
   background-color: white;
   border: 1px solid #ccc;
-  display: block;
   user-select: none;
+}
+
+main {
+  overflow: hidden;
 }
 </style>
